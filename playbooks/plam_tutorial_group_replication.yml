@@ -37,6 +37,15 @@
       group=root
       mode=0644
 
+  - name: set root & vagrant password to X
+    become: yes
+    user:
+      name={{ item }}
+      password="$6$nPOgoUwu$2TvJ/edj6kNF7f4YJfcgHMo7qVIKpYzfPtJHczAB4JKy78sOK0jPKaIpX494DTd91ph2StStsZCGL2CV0Zt1P1"
+    with_items:
+      - root
+      - vagrant
+
   - name: make sure root has /usr/local/bin/ and sbin in path
     become: yes
     replace:
