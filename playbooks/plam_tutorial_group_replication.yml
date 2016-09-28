@@ -92,7 +92,7 @@
 
   - name: extract mysql labs rpms bundles
     unarchive:
-      src=../mysql-innodb-cluster-labs.rpm.tar.gz
+      src=../tmp/mysql-innodb-cluster-labs.rpm.tar.gz
       dest=/tmp/mysql-innodb-cluster-labs/
       remote_src=no
       creates=/tmp/mysql-innodb-cluster-labs/mysql-5.7.15-labs-gr090-el7-x86_64.rpm-bundle.tar
