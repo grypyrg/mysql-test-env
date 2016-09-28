@@ -1,3 +1,4 @@
 Vagrantfile
 .vagrant
 *.retry
+mysql-innodb-cluster-labs.rpm.tar.gz*
