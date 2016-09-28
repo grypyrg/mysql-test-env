@@ -1,94 +1,120 @@
 ---
+### Download Labs
 - hosts: "{{ first_node }}"
   gather_facts: false
+  tags:
+    - download
 
   tasks:
+  - name: create tmpdir
+    file:
+      name=/vagrant/tmp
+      state=directory
+
   - name: download mysql labs rpms
     get_url:
-        url=http://downloads.mysql.com/snapshots/pb/mysql-innodb-cluster-5.7.15-preview/mysql-innodb-cluster-labs201609-el7-x86_64.rpm.tar.gz
-        dest=/vagrant/mysql-innodb-cluster-labs.rpm.tar.gz
+      url=http://downloads.mysql.com/snapshots/pb/mysql-innodb-cluster-5.7.15-preview/mysql-innodb-cluster-labs201609-el7-x86_64.rpm.tar.gz
+      dest=/vagrant/tmp/mysql-innodb-cluster-labs.rpm.tar.gz
 
   - name: create file to say we succeeded(other nodes wait on it)
     file:
-        name=/vagrant/mysql-innodb-cluster-labs.rpm.tar.gz.downloaded
-        state=touch
+      name=/vagrant/tmp/mysql-innodb-cluster-labs.rpm.tar.gz.downloaded
+      state=touch
 
+### General base and installation of rpms
 - hosts: all
   gather_facts: false
+  tags:
+    - base
 
   tasks: 
+  - name: install motd
+    become: yes
+    copy:
+      src=files/motd
+      dest=/etc/motd
+      owner=root
+      group=root
+      mode=0644
+
+  - name: make sure root has /usr/local/bin/ and sbin in path
+    become: yes
+    replace:
+      dest=/root/.bashrc
+      regexp="# \.bashrc\n"
+      replace="# .bashrc\nexport PATH=$PATH:/usr/local/bin:/usr/local/sbin" #"
   - name: install percona repositories
     become: yes
     yum:
-       name=http://www.percona.com/downloads/percona-release/redhat/0.1-3/percona-release-0.1-3.noarch.rpm
-       state=installed
+     name=http://www.percona.com/downloads/percona-release/redhat/0.1-3/percona-release-0.1-3.noarch.rpm
+     state=installed
 
   - name: install required packages
     become: yes
     yum:
-        name={{ item }}
-        state=installed
+      name={{ item }}
+      state=installed
     with_items:
-        - MySQL-python
-        - percona-xtrabackup-24
-        - sysbench
+      - MySQL-python
+      - percona-xtrabackup-24
+      - sysbench
 
   - name: disable firewall
     become: yes
     service:
-        name=firewalld
-        state=stopped
-        enabled=no
+      name=firewalld
+      state=stopped
+      enabled=no
 
   - name: wait for download to finish on node 1
     wait_for: 
-        path=/vagrant/mysql-innodb-cluster-labs.rpm.tar.gz.downloaded
-        state=present
+      path=/vagrant/tmp/mysql-innodb-cluster-labs.rpm.tar.gz.downloaded
+      state=present
 
   - name: create dir
     file:
-        name={{ item }}
-        state=directory
+      name={{ item }}
+      state=directory
     with_items:
-        - /tmp/mysql-innodb-cluster-labs/
-        - /tmp/mysql-innodb-cluster-labs/gr
-        - /tmp/mysql-innodb-cluster-labs/router
-        - /tmp/mysql-innodb-cluster-labs/shell
+      - /tmp/mysql-innodb-cluster-labs/
+      - /tmp/mysql-innodb-cluster-labs/gr
+      - /tmp/mysql-innodb-cluster-labs/router
+      - /tmp/mysql-innodb-cluster-labs/shell
 
   - name: extract mysql labs rpms bundles
     unarchive:
-        src=../mysql-innodb-cluster-labs.rpm.tar.gz
-        dest=/tmp/mysql-innodb-cluster-labs/
-        remote_src=no
-        creates=/tmp/mysql-innodb-cluster-labs/mysql-5.7.15-labs-gr090-el7-x86_64.rpm-bundle.tar
+      src=../mysql-innodb-cluster-labs.rpm.tar.gz
+      dest=/tmp/mysql-innodb-cluster-labs/
+      remote_src=no
+      creates=/tmp/mysql-innodb-cluster-labs/mysql-5.7.15-labs-gr090-el7-x86_64.rpm-bundle.tar
 
   - name: extract mysql labs gr
     command: tar -C /tmp/mysql-innodb-cluster-labs/gr -xvf /tmp/mysql-innodb-cluster-labs/mysql-5.7.15-labs-gr090-el7-x86_64.rpm-bundle.tar
-        creates=/tmp/mysql-innodb-cluster-labs/gr/mysql-community-client-5.7.15-1.labs_gr090.el7.x86_64.rpm 
+      creates=/tmp/mysql-innodb-cluster-labs/gr/mysql-community-client-5.7.15-1.labs_gr090.el7.x86_64.rpm 
 
   - name: extract mysql labs router
     command: tar -C /tmp/mysql-innodb-cluster-labs/router -xvf /tmp/mysql-innodb-cluster-labs/mysql-router-2.1.0-0.1-labs-el7-x86_64.rpm-bundle.tar
-        creates=/tmp/mysql-innodb-cluster-labs/router/mysql-router-2.1.0-0.1.labs.el7.x86_64.rpm
+      creates=/tmp/mysql-innodb-cluster-labs/router/mysql-router-2.1.0-0.1.labs.el7.x86_64.rpm
   - name: extract mysql labs shell
     command: tar -C /tmp/mysql-innodb-cluster-labs/shell -xvf /tmp/mysql-innodb-cluster-labs/mysql-shell-1.0.5-0.1-labs-el7-x86_64.rpm-bundle.tar
-        creates=/tmp/mysql-innodb-cluster-labs/shell/mysql-shell-1.0.5-0.1.labs.el7.x86_64.rpm 
+      creates=/tmp/mysql-innodb-cluster-labs/shell/mysql-shell-1.0.5-0.1.labs.el7.x86_64.rpm 
 
 
   - name: install mysql innodb cluster
     become: true
     yum:
-        name={{ item }}
-        state=installed
+      name={{ item }}
+      state=installed
     with_items:
-        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-client-5.7.15-1.labs_gr090.el7.x86_64.rpm
-        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-common-5.7.15-1.labs_gr090.el7.x86_64.rpm
-        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-libs-5.7.15-1.labs_gr090.el7.x86_64.rpm
-        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-libs-compat-5.7.15-1.labs_gr090.el7.x86_64.rpm
-        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-server-5.7.15-1.labs_gr090.el7.x86_64.rpm
-        - /tmp/mysql-innodb-cluster-labs/router/mysql-router-2.1.0-0.1.labs.el7.x86_64.rpm
-        - /tmp/mysql-innodb-cluster-labs/router/mysql-router-debuginfo-2.1.0-0.1.labs.el7.x86_64.rpm
-        - /tmp/mysql-innodb-cluster-labs/shell/mysql-shell-debuginfo-1.0.5-0.1.labs.el7.x86_64.rpm
-        - /tmp/mysql-innodb-cluster-labs/shell/mysql-shell-1.0.5-0.1.labs.el7.x86_64.rpm
+      - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-client-5.7.15-1.labs_gr090.el7.x86_64.rpm
+      - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-common-5.7.15-1.labs_gr090.el7.x86_64.rpm
+      - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-libs-5.7.15-1.labs_gr090.el7.x86_64.rpm
+      - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-libs-compat-5.7.15-1.labs_gr090.el7.x86_64.rpm
+      - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-server-5.7.15-1.labs_gr090.el7.x86_64.rpm
+      - /tmp/mysql-innodb-cluster-labs/router/mysql-router-2.1.0-0.1.labs.el7.x86_64.rpm
+      - /tmp/mysql-innodb-cluster-labs/router/mysql-router-debuginfo-2.1.0-0.1.labs.el7.x86_64.rpm
+      - /tmp/mysql-innodb-cluster-labs/shell/mysql-shell-debuginfo-1.0.5-0.1.labs.el7.x86_64.rpm
+      - /tmp/mysql-innodb-cluster-labs/shell/mysql-shell-1.0.5-0.1.labs.el7.x86_64.rpm
 
 - hosts: "{{ async_repl_nodes }}"
   gather_facts: true
@@ -97,51 +123,105 @@
   - name: configure /etc/my.cnf 
     become: yes
     template:
-        src=templates/my.dot.cnf.j2
-        dest=/etc/my.cnf
-        owner=root
-        mode=0644
+      src=templates/my.dot.cnf.j2
+      dest=/etc/my.cnf
+      owner=root
+      mode=0644
 
   - name: create mysql datadirectory contents
     become: yes
     command: mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql
-        creates=/var/lib/mysql/mysql
+      creates=/var/lib/mysql/mysql
 
   - name: start mysql
     become: yes
     service: 
-        name=mysqld
-        enabled=yes
-        state=started
+      name=mysqld
+      enabled=yes
+      state=started
 
+
+### Setup replication user
 - hosts: "{{ async_repl_master }}"
   gather_facts: false
+  tags:
+    - replication
 
   tasks:
   - name: create replication user
     mysql_user:
-        name=repl_async
-        login_user=root
-        host="%"
-        priv="*.*:REPLICATION CLIENT,REPLICATION SLAVE"
-        state=present
-        password=Xslave
+      name=repl_async
+      login_user=root
+      host="%"
+      priv="*.*:REPLICATION CLIENT,REPLICATION SLAVE"
+      state=present
+      password=Xslave
+      # "
 
+### Setup replication
 - hosts: "{{ async_repl_slave }}"
   gather_facts: false
+  tags:
+    - replication
 
   tasks:
   - name: configure replication, errors should be ignored because of bug
     mysql_replication:
-        mode=changemaster
-        login_user=root
-        master_host="{{ async_repl_master }}"
-        master_user=repl_async
-        master_password=Xslave
-        master_auto_position=yes
+      mode=changemaster
+      login_user=root
+      master_host="{{ async_repl_master }}"
+      master_user=repl_async
+      master_password=Xslave
+      master_auto_position=yes
     ignore_errors: true
 
   - name: start replication
     mysql_replication:
-        mode=startslave
-        login_user=root
+      mode=startslave
+      login_user=root
+
+
+### Configure sysbench wrappers
+- hosts: "{{ async_repl_master }}"
+  gather_facts: false
+  tags:
+    - sysbench
+
+  tasks:
+  - name: add sysbench schema
+    mysql_db: 
+      login_user=root
+      name=sbtest
+      state=present
+
+  - name: add sysbench user
+    mysql_user:
+      name=test
+      login_user=root
+      host="%"
+      priv="sbtest.*:ALL"
+      state=present
+      password=test
+      #"
+
+  - name: run_sysbench.sh
+    become: yes
+    copy:
+      src=files/run_sysbench.sh
+      dest=/usr/local/bin/run_sysbench.sh
+      owner=root
+      group=root
+      mode=755
+
+  - name: template run_app.sh
+    become: yes
+    template:
+      src=templates/run_app.sh.j2
+      dest=/usr/local/bin/run_app.sh
+      owner=root
+      group=root
+      mode=0755
+
+  - name: prepare database
+    command: /usr/local/bin/run_app.sh prepare
+      creates=/var/lib/mysql/sbtest/sbtest1.frm
