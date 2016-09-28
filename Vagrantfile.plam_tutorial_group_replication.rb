@@ -44,7 +44,8 @@ hostmanager_aws_ips='private'
 
 
 Vagrant.configure('2') do |config|
-  config.vm.box = 'grypyrg/centos-x86_64'
+  #config.vm.box = 'grypyrg/centos-x86_64'
+  config.vm.box = 'lefred14/centos7_64'
   config.ssh.username = 'vagrant'
 
   # it's disabled by default, it's done during the provision phase
@@ -53,6 +54,7 @@ Vagrant.configure('2') do |config|
 
   # Create all three nodes identically except for name and ip
   nodes.each_pair { |name, node_params|
+    config.vm.boot_timeout = 600
     config.vm.define name do |node_config|
       node_config.vm.hostname = name
       node_config.vm.network :private_network, ip: node_params['local_vm_ip'], adaptor: if_adapter
