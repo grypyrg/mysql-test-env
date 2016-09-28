@@ -69,7 +69,7 @@ Vagrant.configure('2') do |config|
 
       # run ansible when last host is up
       if name == prefix + 'mysql4'
-        config.vm.provision "ansible" do |ansible|
+        node_config.vm.provision "ansible" do |ansible|
           ansible.limit = "all"
           ansible.playbook = "playbooks/plam_tutorial_group_replication.yml"
           ansible.verbose = false
