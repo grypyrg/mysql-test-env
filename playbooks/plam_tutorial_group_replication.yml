@@ -166,7 +166,7 @@
       login_user=root
       login_password=X
       host="%"
-      priv="*.*:ALL,GRANTS"
+      priv="*.*:ALL,GRANT"
       state=present
       password=X
       sql_log_bin=no
