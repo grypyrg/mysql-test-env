@@ -12,7 +12,7 @@
 
 if_adapter='vboxnet1'
 ip_range='192.168.56.1'
-prefix='plam-'
+prefix=''
 
 nodes = {
   prefix + 'mysql1' => {
