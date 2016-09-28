@@ -149,6 +149,25 @@
       enabled=yes
       state=started
 
+  - name: set root@localhost passwd
+    mysql_user:
+      name=root
+      login_user=root
+      host="localhost"
+      state=present
+      password=X
+      #"
+    ignore_errors: true
+
+  - name: set root passwds
+    mysql_user:
+      name=root
+      login_user=root
+      login_password=X
+      host="%"
+      state=present
+      password=X
+      #"
 
 ### Setup replication user
 - hosts: "{{ async_repl_master }}"
@@ -161,6 +180,7 @@
     mysql_user:
       name=repl_async
       login_user=root
+      login_password=X
       host="%"
       priv="*.*:REPLICATION CLIENT,REPLICATION SLAVE"
       state=present
@@ -178,6 +198,7 @@
     mysql_replication:
       mode=changemaster
       login_user=root
+      login_password=X
       master_host="{{ async_repl_master }}"
       master_user=repl_async
       master_password=Xslave
@@ -188,6 +209,7 @@
     mysql_replication:
       mode=startslave
       login_user=root
+      login_password=X
 
 
 ### Configure sysbench wrappers
@@ -200,6 +222,7 @@
   - name: add sysbench schema
     mysql_db: 
       login_user=root
+      login_password=X
       name=sbtest
       state=present
 
@@ -207,6 +230,7 @@
     mysql_user:
       name=test
       login_user=root
+      login_password=X
       host="%"
       priv="sbtest.*:ALL"
       state=present
