@@ -18,6 +18,21 @@
   gather_facts: false
 
   tasks: 
+  - name: install required packages
+    become: yes
+    yum:
+        name={{ item }}
+        state=installed
+    with_items:
+        - MySQL-python
+
+  - name: disable firewall
+    become: yes
+    service:
+        name=firewalld
+        state=stopped
+        enabled=no
+
   - name: wait for download to finish on node 1
     wait_for: 
         path=/vagrant/mysql-innodb-cluster-labs.rpm.tar.gz.downloaded
@@ -85,3 +100,41 @@
     command: mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql
         creates=/var/lib/mysql/mysql
 
+  - name: start mysql
+    become: yes
+    service: 
+        name=mysqld
+        enabled=yes
+        state=started
+
+- hosts: "{{ async_repl_master }}"
+  gather_facts: false
+
+  tasks:
+  - name: create replication user
+    mysql_user:
+        name=repl_async
+        login_user=root
+        host="%"
+        priv="*.*:REPLICATION CLIENT,REPLICATION SLAVE"
+        state=present
+        password=Xslave
+
+- hosts: "{{ async_repl_slave }}"
+  gather_facts: false
+
+  tasks:
+  - name: configure replication, errors should be ignored because of bug
+    mysql_replication:
+        mode=changemaster
+        login_user=root
+        master_host="{{ async_repl_master }}"
+        master_user=repl_async
+        master_password=Xslave
+        master_auto_position=yes
+    ignore_errors: true
+
+  - name: start replication
+    mysql_replication:
+        mode=startslave
+        login_user=root
