@@ -72,6 +72,7 @@ Vagrant.configure('2') do |config|
         config.vm.provision "ansible" do |ansible|
           ansible.limit = "all"
           ansible.playbook = "playbooks/plam_tutorial_group_replication.yml"
+          ansible.verbose = false
           ansible.extra_vars = {
             first_node:         prefix + 'mysql1',
             async_repl_nodes:   prefix + 'mysql1' + ',' + prefix + 'mysql2',
