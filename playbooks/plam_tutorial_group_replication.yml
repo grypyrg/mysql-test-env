@@ -156,6 +156,7 @@
       host="localhost"
       state=present
       password=X
+      sql_log_bin=no
       #"
     ignore_errors: true
 
@@ -167,6 +168,7 @@
       host="%"
       state=present
       password=X
+      sql_log_bin=no
       #"
 
 ### Setup replication user
