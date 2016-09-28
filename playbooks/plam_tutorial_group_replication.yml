@@ -23,11 +23,15 @@
 
 ### General base and installation of rpms
 - hosts: all
-  gather_facts: false
+  gather_facts: true
   tags:
     - base
 
   tasks: 
+  - name: set hostname
+    become: yes
+    hostname: name={{ ansible_hostname }}
+
   - name: install motd
     become: yes
     copy:
