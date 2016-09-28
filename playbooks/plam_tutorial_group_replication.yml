@@ -1,0 +1,87 @@
+---
+- hosts: "{{ first_node }}"
+  gather_facts: false
+
+  tasks:
+  - name: download mysql labs rpms
+    get_url:
+        url=http://downloads.mysql.com/snapshots/pb/mysql-innodb-cluster-5.7.15-preview/mysql-innodb-cluster-labs201609-el7-x86_64.rpm.tar.gz
+        dest=/vagrant/mysql-innodb-cluster-labs.rpm.tar.gz
+
+  - name: create file to say we succeeded(other nodes wait on it)
+    file:
+        name=/vagrant/mysql-innodb-cluster-labs.rpm.tar.gz.downloaded
+        state=file
+        force=yes
+
+- hosts: all
+  gather_facts: false
+
+  tasks: 
+  - name: wait for download to finish on node 1
+    wait_for: 
+        path=/vagrant/mysql-innodb-cluster-labs.rpm.tar.gz.downloaded
+        state=present
+
+  - name: create dir
+    file:
+        name={{ item }}
+        state=directory
+    with_items:
+        - /tmp/mysql-innodb-cluster-labs/
+        - /tmp/mysql-innodb-cluster-labs/gr
+        - /tmp/mysql-innodb-cluster-labs/router
+        - /tmp/mysql-innodb-cluster-labs/shell
+
+  - name: extract mysql labs rpms bundles
+    unarchive:
+        src=../mysql-innodb-cluster-labs.rpm.tar.gz
+        dest=/tmp/mysql-innodb-cluster-labs/
+        remote_src=no
+        creates=/tmp/mysql-innodb-cluster-labs/mysql-5.7.15-labs-gr090-el7-x86_64.rpm-bundle.tar
+
+  - name: extract mysql labs gr
+    command: tar -C /tmp/mysql-innodb-cluster-labs/gr -xvf /tmp/mysql-innodb-cluster-labs/mysql-5.7.15-labs-gr090-el7-x86_64.rpm-bundle.tar
+        creates=/tmp/mysql-innodb-cluster-labs/gr/mysql-community-client-5.7.15-1.labs_gr090.el7.x86_64.rpm 
+
+  - name: extract mysql labs router
+    command: tar -C /tmp/mysql-innodb-cluster-labs/router -xvf /tmp/mysql-innodb-cluster-labs/mysql-router-2.1.0-0.1-labs-el7-x86_64.rpm-bundle.tar
+        creates=/tmp/mysql-innodb-cluster-labs/router/mysql-router-2.1.0-0.1.labs.el7.x86_64.rpm
+  - name: extract mysql labs shell
+    command: tar -C /tmp/mysql-innodb-cluster-labs/shell -xvf /tmp/mysql-innodb-cluster-labs/mysql-shell-1.0.5-0.1-labs-el7-x86_64.rpm-bundle.tar
+        creates=/tmp/mysql-innodb-cluster-labs/shell/mysql-shell-1.0.5-0.1.labs.el7.x86_64.rpm 
+
+
+  - name: install mysql innodb cluster
+    become: true
+    yum:
+        name={{ item }}
+        state=installed
+    with_items:
+        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-client-5.7.15-1.labs_gr090.el7.x86_64.rpm
+        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-common-5.7.15-1.labs_gr090.el7.x86_64.rpm
+        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-libs-5.7.15-1.labs_gr090.el7.x86_64.rpm
+        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-libs-compat-5.7.15-1.labs_gr090.el7.x86_64.rpm
+        - /tmp/mysql-innodb-cluster-labs/gr/mysql-community-server-5.7.15-1.labs_gr090.el7.x86_64.rpm
+        - /tmp/mysql-innodb-cluster-labs/router/mysql-router-2.1.0-0.1.labs.el7.x86_64.rpm
+        - /tmp/mysql-innodb-cluster-labs/router/mysql-router-debuginfo-2.1.0-0.1.labs.el7.x86_64.rpm
+        - /tmp/mysql-innodb-cluster-labs/shell/mysql-shell-debuginfo-1.0.5-0.1.labs.el7.x86_64.rpm
+        - /tmp/mysql-innodb-cluster-labs/shell/mysql-shell-1.0.5-0.1.labs.el7.x86_64.rpm
+
+- hosts: "{{ async_repl_nodes }}"
+  gather_facts: true
+
+  tasks:
+  - name: configure /etc/my.cnf 
+    become: yes
+    template:
+        src=templates/my.dot.cnf.j2
+        dest=/etc/my.cnf
+        owner=root
+        mode=0644
+
+  - name: create mysql datadirectory contents
+    become: yes
+    command: mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql
+        creates=/var/lib/mysql/mysql
+

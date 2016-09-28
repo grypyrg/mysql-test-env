@@ -65,6 +65,32 @@ Vagrant.configure('2') do |config|
 
       provider_virtualbox( nil, node_config, 256)
 
+      # run ansible when last host is up
+      if name == prefix + 'mysql4'
+        config.vm.provision "ansible" do |ansible|
+          ansible.limit = "all"
+          ansible.playbook = "playbooks/plam_tutorial_group_replication.yml"
+          ansible.extra_vars = {
+            first_node: prefix + 'mysql1',
+            async_repl_nodes: prefix + 'mysql1' + ',' + prefix + 'mysql2',
+          }
+          ansible.host_vars = {
+            prefix + 'mysql1' => {
+              "server_id"         => nodes[prefix + 'mysql1']['server_id']
+            },
+            prefix + 'mysql2' => {
+              "server_id"         => nodes[prefix + 'mysql2']['server_id']
+            },
+            prefix + 'mysql3' => {
+              "server_id"         => nodes[prefix + 'mysql3']['server_id']
+            },
+            prefix + 'mysql4' => {
+              "server_id"         => nodes[prefix + 'mysql4']['server_id']
+            },
+          }
+        end
+      end
+
     end
   }
 end

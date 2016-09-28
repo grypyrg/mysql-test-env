@@ -1,0 +1,18 @@
+[mysqld]
+datadir=/var/lib/mysql
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+gtid-mode=on
+enforce-gtid-consistency
+log-slave-updates
+server_id={{ server_id }}
+master_info_repository=TABLE
+relay_log_info_repository=TABLE
+#transaction-write-set-extraction=MURMUR32
+#binlog-checksum=NONE
+#validate_password_policy=0
+#validate_password_length=0
+log-bin=mysql-bin
+
+[mysql]
+prompt="{{ ansible_hostname }} mysql> "
