@@ -54,7 +54,7 @@
     become: yes
     replace:
       dest=/root/.bashrc
-      regexp="# \.bashrc\n"
+      regexp="# \.bashrc\n\n"
       replace="# .bashrc\nexport PATH=$PATH:/usr/local/bin:/usr/local/sbin" #"
   - name: install percona repositories
     become: yes
