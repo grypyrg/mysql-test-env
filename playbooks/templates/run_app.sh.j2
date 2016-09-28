@@ -1,0 +1,40 @@
+#!/bin/bash
+
+host={{ async_repl_master }}
+port=3306
+
+
+function give_help {
+		echo "Usage:"
+		echo -e "\t$0 (prepare|{{async_repl_master}}|lcf)"
+		exit 1
+}
+
+case "$1" in
+	{{async_repl_master}})
+		host={{async_repl_master}}
+		;;
+	prepare)
+		/usr/local/bin/run_sysbench.sh -p $port -h $host -x prepare	
+		exit
+		;;
+	"")
+		#default settings will be used when no argument is given
+		;;
+	help)
+		give_help
+		exit 0;
+		;;
+	*)
+		echo "ERROR: invalid database access method";
+		give_help
+		exit 1;
+		;;
+esac
+
+
+while true; do
+	/usr/local/bin/run_sysbench.sh -c 4 -p $port -h $host -x oltp -b 50 -o "--oltp-reconnect=1"
+	sleep 1
+done
+
