@@ -56,6 +56,21 @@
       dest=/root/.bashrc
       regexp="# \.bashrc\n\n"
       replace="# .bashrc\nexport PATH=$PATH:/usr/local/bin:/usr/local/sbin" #"
+
+  - name: make sure root ssh password auth works
+    become: yes
+    replace:
+      dest=/etc/ssh/sshd_config
+      regexp="^PasswordAuthentication no$"
+      replace="PasswordAuthentication yes"
+    register: updated_sshd_config
+
+  - name: restart sshd
+    service:
+      name=sshd
+      state=restarted
+    when: updated_sshd_config.changed == true
+
   - name: install percona repositories
     become: yes
     yum:
@@ -265,3 +280,18 @@
   - name: prepare database
     command: /usr/local/bin/run_app.sh prepare
       creates=/var/lib/mysql/sbtest/sbtest1.frm
+
+
+### Backup prep
+- hosts: "{{ async_repl_master }}"
+  gather_facts: false
+
+  tasks:
+  - name: make backup dir
+    become: yes
+    file:
+      name=/tmp/backup
+      owner=root
+      group=root
+      mode=0755
+      state=directory
