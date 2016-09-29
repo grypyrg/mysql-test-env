@@ -87,6 +87,7 @@
       - MySQL-python
       - percona-xtrabackup-24
       - sysbench
+      - screen
 
   - name: disable firewall
     become: yes
@@ -152,9 +153,18 @@
   - name: configure /etc/my.cnf 
     become: yes
     template:
-      src=templates/my.dot.cnf.j2
+      src=templates/my.cnf.j2
       dest=/etc/my.cnf
       owner=root
+      mode=0644
+
+  - name: create mysql log file
+    become: yes
+    file:
+      name=/var/log/mysqld.log
+      state=touch
+      owner=mysql
+      group=mysql
       mode=0644
 
   - name: create mysql datadirectory contents
@@ -191,6 +201,15 @@
       password=X
       sql_log_bin=no
       #"
+
+  - name: create .my.cnf for root and vagrant user
+    become: yes
+    copy:
+      src=files/dot.my.cnf
+      dest={{item}}/.my.cnf
+    with_items:
+      - /root
+      - /home/vagrant
 
 ### Setup replication user
 - hosts: "{{ async_repl_master }}"
@@ -279,6 +298,7 @@
       mode=0755
 
   - name: prepare database
+    become: yes
     command: /usr/local/bin/run_app.sh prepare
       creates=/var/lib/mysql/sbtest/sbtest1.frm
 
@@ -296,3 +316,20 @@
       group=root
       mode=0755
       state=directory
+
+
+### Cleanup
+- hosts: all
+  gather_facts: false
+
+  tasks:
+  - name: yum clean
+    command: yum clean all
+
+  - name: write all zeros
+    become: yes
+    shell: dd if=/dev/zero of=/bigemptyfile; rm /bigemptyfile
+    ignore_errors: true
+
+  - name: remove bash history
+    shell: cat /dev/null > ~/.bash_history && history -c
