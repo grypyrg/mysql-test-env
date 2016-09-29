@@ -66,6 +66,7 @@
     register: updated_sshd_config
 
   - name: restart sshd
+    become: yes
     service:
       name=sshd
       state=restarted
