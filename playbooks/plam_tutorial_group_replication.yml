@@ -146,6 +146,16 @@
       - /tmp/mysql-innodb-cluster-labs/shell/mysql-shell-debuginfo-1.0.5-0.1.labs.el7.x86_64.rpm
       - /tmp/mysql-innodb-cluster-labs/shell/mysql-shell-1.0.5-0.1.labs.el7.x86_64.rpm
 
+  - name: create .my.cnf for root and vagrant user
+    become: yes
+    copy:
+      src=files/dot.my.cnf
+      dest={{item}}/.my.cnf
+    with_items:
+      - /root
+      - /home/vagrant
+
+
 - hosts: "{{ async_repl_nodes }}"
   gather_facts: true
 
@@ -201,15 +211,6 @@
       password=X
       sql_log_bin=no
       #"
-
-  - name: create .my.cnf for root and vagrant user
-    become: yes
-    copy:
-      src=files/dot.my.cnf
-      dest={{item}}/.my.cnf
-    with_items:
-      - /root
-      - /home/vagrant
 
 ### Setup replication user
 - hosts: "{{ async_repl_master }}"
