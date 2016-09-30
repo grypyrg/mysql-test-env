@@ -193,6 +193,7 @@
     mysql_user:
       name=root
       login_user=root
+      login_password=""
       host="localhost"
       state=present
       password=X
