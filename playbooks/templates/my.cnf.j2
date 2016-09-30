@@ -14,5 +14,9 @@ relay_log_info_repository=TABLE
 #validate_password_length=0
 log-bin=mysql-bin
 
+{% if ansible_hostname == async_repl_slave %}
+super_read_only
+{% endif %}
+
 [mysql]
 prompt="{{ ansible_hostname }} mysql> "
