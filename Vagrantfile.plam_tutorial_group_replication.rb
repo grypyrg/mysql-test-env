@@ -44,8 +44,8 @@ hostmanager_aws_ips='private'
 
 
 Vagrant.configure('2') do |config|
-  #config.vm.box = 'grypyrg/centos-x86_64'
-  config.vm.box = 'lefred14/centos7_64'
+  config.vm.box = 'grypyrg/centos-x86_64'
+  #config.vm.box = 'lefred14/centos7_64'
   config.ssh.username = 'vagrant'
 
   # it's disabled by default, it's done during the provision phase
