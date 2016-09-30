@@ -155,6 +155,11 @@
       - /root
       - /home/vagrant
 
+  - name: download GR sys additions
+    get_url:
+      url=https://raw.githubusercontent.com/lefred/mysql_gr_routing_check/master/addition_to_sys.sql
+      dest=/tmp/gr_addition_to_sys.sql
+
 
 - hosts: "{{ async_repl_nodes }}"
   gather_facts: true
