@@ -32,6 +32,13 @@
     become: yes
     hostname: name={{ ansible_hostname }}
 
+  - name: remove hostname from localhost
+    become: yes
+    replace:
+      dest=/etc/hosts
+      regexp="^127\.0\.0\.1\s*{{ ansible_hostname }}\s*{{ ansible_hostname }}"
+      replace="#127.0.0.1 {{ ansible_hostname }}  {{ ansible_hostname }}"
+
   - name: install motd
     become: yes
     copy:
