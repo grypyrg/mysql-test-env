@@ -189,6 +189,14 @@
       enabled=yes
       state=started
 
+  - name: disable super read only
+    mysql_variables:
+      login_user=root
+      login_password=""
+      variable=super_read_only
+      value=0
+    when: ansible_hostname == async_repl_slave
+
   - name: set root@localhost passwd
     mysql_user:
       name=root
@@ -212,6 +220,14 @@
       password=X
       sql_log_bin=no
       #"
+
+  - name: enable super read only
+    mysql_variables:
+      login_user=root
+      login_password=X
+      variable=super_read_only
+      value=0
+    when: ansible_hostname == async_repl_slave
 
 ### Setup replication user
 - hosts: "{{ async_repl_master }}"
