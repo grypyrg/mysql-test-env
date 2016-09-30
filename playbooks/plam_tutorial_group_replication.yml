@@ -68,8 +68,8 @@
     become: yes
     replace:
       dest=/etc/ssh/sshd_config
-      regexp="^PasswordAuthentication no$"
-      replace="PasswordAuthentication yes"
+      regexp="^PasswordAuthentication.*\n"
+      replace="PasswordAuthentication yes\n"
     register: updated_sshd_config
 
   - name: restart sshd
